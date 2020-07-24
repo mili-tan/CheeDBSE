@@ -15,7 +15,6 @@ namespace CheeDBSEngine
 
         static void Main(string[] args)
         {
-            DB.Put("test", "test");
 
             var host = new WebHostBuilder()
                 .UseKestrel()
