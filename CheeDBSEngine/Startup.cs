@@ -49,16 +49,54 @@ namespace CheeDBSEngine
                 switch (context.Request.Method)
                 {
                     case "GET":
-                        await context.Response.WriteAsync(DB.Get(keyName));
+                        var val = DB.Get(keyName);
+                        await context.Response.WriteAsync(string.IsNullOrEmpty(val) ? "not found" : val);
+                        break;
+                    case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
+                                    !string.IsNullOrWhiteSpace(keyValue):
+                        DB.Put(keyName, keyValue.ToString());
+                        await context.Response.WriteAsync("OK");
+                        break;
+                    case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
+                                    !string.IsNullOrWhiteSpace(keyValue):
+                        DB.Put(keyName, keyValue.ToString());
+                        await context.Response.WriteAsync("OK");
                         break;
                     case "PUT":
-                        if (queryDictionary.TryGetValue("value", out var keyValue))
-                        {
-                            DB.Put(keyName, keyValue.ToString());
-                            await context.Response.WriteAsync("OK");
-                        }
-                        else
-                            await context.Response.WriteAsync("need value");
+                        await context.Response.WriteAsync("need value");
+                        break;
+                    case "DELETE":
+                        await Task.Run(() => { DB.Remove(keyName); });
+                        await context.Response.WriteAsync("OK");
+                        break;
+                }
+            });
+
+            endpoints.Map("/keys/{keyName}/{keyMethod}", async context =>
+            {
+                var queryDictionary = context.Request.Query;
+                var keyName = context.GetRouteValue("keyName").ToString();
+                var keyMethod = context.GetRouteValue("keyMethod").ToString();
+                context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
+                context.Response.ContentType = "text/plain";
+                switch (keyMethod.ToUpper())
+                {
+                    case "GET":
+                        var val = DB.Get(keyName);
+                        await context.Response.WriteAsync(string.IsNullOrEmpty(val) ? "not found" : val);
+                        break;
+                    case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
+                                    !string.IsNullOrWhiteSpace(keyValue):
+                        DB.Put(keyName, keyValue.ToString());
+                        await context.Response.WriteAsync("OK");
+                        break;
+                    case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
+                                    !string.IsNullOrWhiteSpace(keyValue):
+                        DB.Put(keyName, keyValue.ToString());
+                        await context.Response.WriteAsync("OK");
+                        break;
+                    case "PUT":
+                        await context.Response.WriteAsync("need value");
                         break;
                     case "DELETE":
                         await Task.Run(() => { DB.Remove(keyName); });
