@@ -49,8 +49,14 @@ namespace CheeDBSEngine
                 switch (context.Request.Method)
                 {
                     case "GET":
-                        var val = DB.Get(keyName);
-                        await context.Response.WriteAsync(string.IsNullOrEmpty(val) ? "not found" : val);
+                        if (Cache.TryGet(keyName, out var tVal))
+                            await context.Response.WriteAsync(tVal.ToString());
+                        else
+                        {
+                            var val = DB.Get(keyName);
+                            Cache.Put(keyName, val);
+                            await context.Response.WriteAsync(string.IsNullOrEmpty(val) ? "not found" : val);
+                        }
                         break;
                     case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
                                     !string.IsNullOrWhiteSpace(keyValue):
