@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace CheeDBSEngine
 {
-    class Cache
+    class MCache
     {
         public static void Add(string key, object val, int ttl)
         {
@@ -38,7 +38,7 @@ namespace CheeDBSEngine
         {
             Task.Run(() =>
             {
-                if (!MemoryCache.Default.Contains(key)) MemoryCache.Default.Remove(key);
+                if (MemoryCache.Default.Contains(key)) MemoryCache.Default.Remove(key);
             });
         }
 

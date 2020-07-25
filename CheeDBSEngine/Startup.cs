@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.Caching;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -34,12 +38,38 @@ namespace CheeDBSEngine
                     context.Response.ContentType = "text/html";
                     await context.Response.WriteAsync(IndexStr);
                 });
-            }).UseEndpoints(KeysRoutes);
+            }).UseEndpoints(KeysRoutes).UseEndpoints(CacheRoutes);
+        }
+
+        private void CacheRoutes(IEndpointRouteBuilder endpoints)
+        {
+            endpoints.Map("/cache/keys", async context =>
+            {
+                context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
+                context.Response.ContentType = "text/plain";
+                await context.Response.WriteAsync(string.Join(Environment.NewLine,
+                    MemoryCache.Default.ToArray()));
+            });
         }
 
         private void KeysRoutes(IEndpointRouteBuilder endpoints)
         {
-            endpoints.Map("/keys/{keyName}", async context =>
+            endpoints.Map("/rocks/keys", async context =>
+            {
+                var keyList = new List<string>();
+                using (var iterator = DB.NewIterator())
+                {
+                    iterator.Seek("");
+                    while (iterator.Valid())
+                    {
+                        keyList.Add(iterator.StringKey() + ":" + iterator.StringValue());
+                        iterator.Next();
+                    }
+                }
+
+                await context.Response.WriteAsync(string.Join(Environment.NewLine, keyList));
+            });
+            endpoints.Map("/rocks/keys/{keyName}", async context =>
             {
                 var queryDictionary = context.Request.Query;
                 var keyName = context.GetRouteValue("keyName").ToString();
@@ -49,7 +79,7 @@ namespace CheeDBSEngine
                 switch (context.Request.Method)
                 {
                     case "GET":
-                        if (Cache.TryGet(keyName, out var tVal))
+                        if (MCache.TryGet(keyName, out var tVal))
                             await context.Response.WriteAsync(tVal.ToString());
                         else
                         {
@@ -57,7 +87,7 @@ namespace CheeDBSEngine
                             if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
                             else
                             {
-                                Cache.Put(keyName, val);
+                                MCache.Put(keyName, val);
                                 await context.Response.WriteAsync(val);
                             }
                         }
@@ -67,7 +97,7 @@ namespace CheeDBSEngine
                         await Task.Run(() =>
                         {
                             DB.Put(keyName, keyValue.ToString());
-                            Cache.Put(keyName, keyValue.ToString());
+                            MCache.Put(keyName, keyValue.ToString());
                         });
                         await context.Response.WriteAsync("OK");
                         break;
@@ -76,7 +106,7 @@ namespace CheeDBSEngine
                         await Task.Run(() =>
                         {
                             DB.Put(keyName, keyValue.ToString());
-                            Cache.Put(keyName, keyValue.ToString());
+                            MCache.Put(keyName, keyValue.ToString());
                         });
                         await context.Response.WriteAsync("OK");
                         break;
@@ -87,14 +117,14 @@ namespace CheeDBSEngine
                         await Task.Run(() =>
                         {
                             DB.Remove(keyName);
-                            Cache.Del(keyName);
+                            MCache.Del(keyName);
                         });
                         await context.Response.WriteAsync("OK");
                         break;
                 }
             });
 
-            endpoints.Map("/keys/{keyName}/{keyMethod}", async context =>
+            endpoints.Map("/rocks/keys/{keyName}/{keyMethod}", async context =>
             {
                 var queryDictionary = context.Request.Query;
                 var keyName = context.GetRouteValue("keyName").ToString();
@@ -104,7 +134,7 @@ namespace CheeDBSEngine
                 switch (keyMethod.ToUpper())
                 {
                     case "GET":
-                        if (Cache.TryGet(keyName, out var tVal))
+                        if (MCache.TryGet(keyName, out var tVal))
                             await context.Response.WriteAsync(tVal.ToString());
                         else
                         {
@@ -112,7 +142,7 @@ namespace CheeDBSEngine
                             if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
                             else
                             {
-                                Cache.Put(keyName, val);
+                                MCache.Put(keyName, val);
                                 await context.Response.WriteAsync(val);
                             }
                         }
@@ -122,7 +152,7 @@ namespace CheeDBSEngine
                         await Task.Run(() =>
                         {
                             DB.Put(keyName, keyValue.ToString());
-                            Cache.Put(keyName, keyValue.ToString());
+                            MCache.Put(keyName, keyValue.ToString());
                         });
                         await context.Response.WriteAsync("OK");
                         break;
@@ -131,7 +161,7 @@ namespace CheeDBSEngine
                         await Task.Run(() =>
                         {
                             DB.Put(keyName, keyValue.ToString());
-                            Cache.Put(keyName, keyValue.ToString());
+                            MCache.Put(keyName, keyValue.ToString());
                         });
                         await context.Response.WriteAsync("OK");
                         break;
@@ -141,16 +171,16 @@ namespace CheeDBSEngine
                     case "DELETE":
                         await Task.Run(() =>
                         {
+                            MCache.Del(keyName);
                             DB.Remove(keyName);
-                            Cache.Del(keyName);
                         });
                         await context.Response.WriteAsync("OK");
                         break;
                     case "DEL":
                         await Task.Run(() =>
                         {
+                            MCache.Del(keyName);
                             DB.Remove(keyName);
-                            Cache.Del(keyName);
                         });
                         await context.Response.WriteAsync("OK");
                         break;
