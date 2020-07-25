@@ -54,25 +54,41 @@ namespace CheeDBSEngine
                         else
                         {
                             var val = DB.Get(keyName);
-                            Cache.Put(keyName, val);
-                            await context.Response.WriteAsync(string.IsNullOrEmpty(val) ? "not found" : val);
+                            if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
+                            else
+                            {
+                                Cache.Put(keyName, val);
+                                await context.Response.WriteAsync(val);
+                            }
                         }
                         break;
                     case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
                                     !string.IsNullOrWhiteSpace(keyValue):
-                        DB.Put(keyName, keyValue.ToString());
+                        await Task.Run(() =>
+                        {
+                            DB.Put(keyName, keyValue.ToString());
+                            Cache.Put(keyName, keyValue.ToString());
+                        });
                         await context.Response.WriteAsync("OK");
                         break;
                     case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
                                     !string.IsNullOrWhiteSpace(keyValue):
-                        DB.Put(keyName, keyValue.ToString());
+                        await Task.Run(() =>
+                        {
+                            DB.Put(keyName, keyValue.ToString());
+                            Cache.Put(keyName, keyValue.ToString());
+                        });
                         await context.Response.WriteAsync("OK");
                         break;
                     case "PUT":
                         await context.Response.WriteAsync("need value");
                         break;
                     case "DELETE":
-                        await Task.Run(() => { DB.Remove(keyName); });
+                        await Task.Run(() =>
+                        {
+                            DB.Remove(keyName);
+                            Cache.Del(keyName);
+                        });
                         await context.Response.WriteAsync("OK");
                         break;
                 }
@@ -88,24 +104,54 @@ namespace CheeDBSEngine
                 switch (keyMethod.ToUpper())
                 {
                     case "GET":
-                        var val = DB.Get(keyName);
-                        await context.Response.WriteAsync(string.IsNullOrEmpty(val) ? "not found" : val);
+                        if (Cache.TryGet(keyName, out var tVal))
+                            await context.Response.WriteAsync(tVal.ToString());
+                        else
+                        {
+                            var val = DB.Get(keyName);
+                            if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
+                            else
+                            {
+                                Cache.Put(keyName, val);
+                                await context.Response.WriteAsync(val);
+                            }
+                        }
                         break;
                     case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
                                     !string.IsNullOrWhiteSpace(keyValue):
-                        DB.Put(keyName, keyValue.ToString());
+                        await Task.Run(() =>
+                        {
+                            DB.Put(keyName, keyValue.ToString());
+                            Cache.Put(keyName, keyValue.ToString());
+                        });
                         await context.Response.WriteAsync("OK");
                         break;
                     case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
                                     !string.IsNullOrWhiteSpace(keyValue):
-                        DB.Put(keyName, keyValue.ToString());
+                        await Task.Run(() =>
+                        {
+                            DB.Put(keyName, keyValue.ToString());
+                            Cache.Put(keyName, keyValue.ToString());
+                        });
                         await context.Response.WriteAsync("OK");
                         break;
                     case "PUT":
                         await context.Response.WriteAsync("need value");
                         break;
                     case "DELETE":
-                        await Task.Run(() => { DB.Remove(keyName); });
+                        await Task.Run(() =>
+                        {
+                            DB.Remove(keyName);
+                            Cache.Del(keyName);
+                        });
+                        await context.Response.WriteAsync("OK");
+                        break;
+                    case "DEL":
+                        await Task.Run(() =>
+                        {
+                            DB.Remove(keyName);
+                            Cache.Del(keyName);
+                        });
                         await context.Response.WriteAsync("OK");
                         break;
                 }
