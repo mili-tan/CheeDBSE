@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using RocksDbSharp;
 using static CheeDBSEngine.Program;
 
 namespace CheeDBSEngine
@@ -47,7 +48,7 @@ namespace CheeDBSEngine
                 context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
                 context.Response.ContentType = "text/plain";
                 await context.Response.WriteAsync(string.Join(Environment.NewLine,
-                    MemoryCache.Default.ToArray()));
+                    MemoryCache.Default.Select(item => $"{item.Key}:{item.Value}").ToList()));
             });
         }
 
