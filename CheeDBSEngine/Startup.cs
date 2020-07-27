@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Caching;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -59,9 +58,11 @@ namespace CheeDBSEngine
                 var keyList = new List<string>();
                 using (var iterator = DB.NewIterator())
                 {
-                    iterator.Seek("");
-                    while (iterator.Valid())
+                    var seek = context.Request.Query["seek"].ToString();
+                    iterator.Seek(seek);
+                    while (iterator.Valid() && iterator.StringKey().StartsWith(seek))
                     {
+                        //if (!iterator.StringKey().StartsWith(seek)) break;
                         keyList.Add(iterator.StringKey() + ":" + iterator.StringValue());
                         iterator.Next();
                     }
