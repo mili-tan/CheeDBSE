@@ -67,126 +67,82 @@ namespace CheeDBSEngine
                         iterator.Next();
                     }
                 }
-
                 await context.Response.WriteAsync(string.Join(Environment.NewLine, keyList));
             });
             endpoints.Map("/rocks/keys/{keyName}", async context =>
             {
-                var queryDictionary = context.Request.Query;
-                var keyName = context.GetRouteValue("keyName").ToString();
                 context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
                 context.Response.ContentType = "text/plain";
-
-                switch (context.Request.Method)
-                {
-                    case "GET":
-                        if (MCache.TryGet(keyName, out var tVal))
-                            await context.Response.WriteAsync(tVal.ToString());
-                        else
-                        {
-                            var val = DB.Get(keyName);
-                            if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
-                            else
-                            {
-                                MCache.Put(keyName, val);
-                                await context.Response.WriteAsync(val);
-                            }
-                        }
-                        break;
-                    case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
-                                    !string.IsNullOrWhiteSpace(keyValue):
-                        await Task.Run(() =>
-                        {
-                            DB.Put(keyName, keyValue.ToString());
-                            MCache.Put(keyName, keyValue.ToString());
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                    case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
-                                    !string.IsNullOrWhiteSpace(keyValue):
-                        await Task.Run(() =>
-                        {
-                            DB.Put(keyName, keyValue.ToString());
-                            MCache.Put(keyName, keyValue.ToString());
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                    case "PUT":
-                        await context.Response.WriteAsync("need value");
-                        break;
-                    case "DELETE":
-                        await Task.Run(() =>
-                        {
-                            DB.Remove(keyName);
-                            MCache.Del(keyName);
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                }
+                await MethodCases(context, context.Request.Method);
             });
 
             endpoints.Map("/rocks/keys/{keyName}/{keyMethod}", async context =>
             {
-                var queryDictionary = context.Request.Query;
-                var keyName = context.GetRouteValue("keyName").ToString();
                 var keyMethod = context.GetRouteValue("keyMethod").ToString();
                 context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
                 context.Response.ContentType = "text/plain";
-                switch (keyMethod.ToUpper())
-                {
-                    case "GET":
-                        if (MCache.TryGet(keyName, out var tVal))
-                            await context.Response.WriteAsync(tVal.ToString());
+                await MethodCases(context, keyMethod.ToUpper());
+            });
+        }
+
+        private static async Task MethodCases(HttpContext context, string method)
+        {
+            var queryDictionary = context.Request.Query;
+            var keyName = context.GetRouteValue("keyName").ToString();
+            switch (method)
+            {
+                case "GET":
+                    if (MCache.TryGet(keyName, out var tVal))
+                        await context.Response.WriteAsync(tVal.ToString());
+                    else
+                    {
+                        var val = DB.Get(keyName);
+                        if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
                         else
                         {
-                            var val = DB.Get(keyName);
-                            if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
-                            else
-                            {
-                                MCache.Put(keyName, val);
-                                await context.Response.WriteAsync(val);
-                            }
+                            MCache.Put(keyName, val);
+                            await context.Response.WriteAsync(val);
                         }
-                        break;
-                    case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
-                                    !string.IsNullOrWhiteSpace(keyValue):
-                        await Task.Run(() =>
-                        {
-                            DB.Put(keyName, keyValue.ToString());
-                            MCache.Put(keyName, keyValue.ToString());
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                    case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
-                                    !string.IsNullOrWhiteSpace(keyValue):
-                        await Task.Run(() =>
-                        {
-                            DB.Put(keyName, keyValue.ToString());
-                            MCache.Put(keyName, keyValue.ToString());
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                    case "PUT":
-                        await context.Response.WriteAsync("need value");
-                        break;
-                    case "DELETE":
-                        await Task.Run(() =>
-                        {
-                            MCache.Del(keyName);
-                            DB.Remove(keyName);
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                    case "DEL":
-                        await Task.Run(() =>
-                        {
-                            MCache.Del(keyName);
-                            DB.Remove(keyName);
-                        });
-                        await context.Response.WriteAsync("OK");
-                        break;
-                }
-            });
+                    }
+                    break;
+                case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
+                    !string.IsNullOrWhiteSpace(keyValue):
+                    await Task.Run(() =>
+                    {
+                        DB.Put(keyName, keyValue.ToString());
+                        MCache.Put(keyName, keyValue.ToString());
+                    });
+                    await context.Response.WriteAsync("OK");
+                    break;
+                case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
+                    !string.IsNullOrWhiteSpace(keyValue):
+                    await Task.Run(() =>
+                    {
+                        DB.Put(keyName, keyValue.ToString());
+                        MCache.Put(keyName, keyValue.ToString());
+                    });
+                    await context.Response.WriteAsync("OK");
+                    break;
+                case "PUT":
+                    await context.Response.WriteAsync("need value");
+                    break;
+                case "DELETE":
+                    await Task.Run(() =>
+                    {
+                        MCache.Del(keyName);
+                        DB.Remove(keyName);
+                    });
+                    await context.Response.WriteAsync("OK");
+                    break;
+                case "DEL":
+                    await Task.Run(() =>
+                    {
+                        MCache.Del(keyName);
+                        DB.Remove(keyName);
+                    });
+                    await context.Response.WriteAsync("OK");
+                    break;
+            }
         }
     }
 }
