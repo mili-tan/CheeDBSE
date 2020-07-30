@@ -88,7 +88,7 @@ namespace CheeDBSEngine
 
         private static async Task MethodCases(HttpContext context, string method)
         {
-            var queryDictionary = context.Request.Query;
+            var queryDict = context.Request.Query;
             var keyName = context.GetRouteValue("keyName").ToString();
             switch (method)
             {
@@ -105,9 +105,12 @@ namespace CheeDBSEngine
                             await context.Response.WriteAsync(val);
                         }
                     }
+
                     break;
-                case "PUT" when queryDictionary.TryGetValue("value", out var keyValue) &&
-                    !string.IsNullOrWhiteSpace(keyValue):
+                case "PUT" when queryDict.TryGetValue("value", out var keyValue) ||
+                                context.Request.Method != "GET" &&
+                                context.Request.Form.TryGetValue("value", out keyValue) &&
+                                !string.IsNullOrWhiteSpace(keyValue):
                     await Task.Run(() =>
                     {
                         DB.Put(keyName, keyValue.ToString());
@@ -115,8 +118,10 @@ namespace CheeDBSEngine
                     });
                     await context.Response.WriteAsync("OK");
                     break;
-                case "PUT" when queryDictionary.TryGetValue("val", out var keyValue) &&
-                    !string.IsNullOrWhiteSpace(keyValue):
+                case "PUT" when queryDict.TryGetValue("val", out var keyValue) ||
+                                context.Request.Method != "GET" &&
+                                context.Request.Form.TryGetValue("value", out keyValue) &&
+                                !string.IsNullOrWhiteSpace(keyValue):
                     await Task.Run(() =>
                     {
                         DB.Put(keyName, keyValue.ToString());
