@@ -44,7 +44,7 @@ namespace CheeDBSEngine
         {
             endpoints.Map("/cache/keys", async context =>
             {
-                context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
+                context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
                 context.Response.ContentType = "text/plain";
                 await context.Response.WriteAsync(string.Join(Environment.NewLine,
                     MemoryCache.Default.Select(item => $"{item.Key}:{item.Value}").ToList()));
@@ -71,7 +71,7 @@ namespace CheeDBSEngine
             });
             endpoints.Map("/rocks/keys/{keyName}", async context =>
             {
-                context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
+                context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
                 context.Response.ContentType = "text/plain";
                 await MethodCases(context, context.Request.Method);
             });
@@ -79,7 +79,7 @@ namespace CheeDBSEngine
             endpoints.Map("/rocks/keys/{keyName}/{keyMethod}", async context =>
             {
                 var keyMethod = context.GetRouteValue("keyMethod").ToString();
-                context.Response.Headers.Add("X-Powered-By", "CheeDBS/ONE");
+                context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
                 context.Response.ContentType = "text/plain";
                 await MethodCases(context, keyMethod.ToUpper());
             });
