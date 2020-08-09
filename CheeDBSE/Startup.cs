@@ -22,6 +22,8 @@ namespace CheeDBSEngine
             ? File.ReadAllText(SetupBasePath + "index.html")
             : "Welcome to CheeDBS";
 
+        public static bool CacheEnable = false;
+
         public void ConfigureServices(IServiceCollection services)
         {
 
@@ -92,7 +94,7 @@ namespace CheeDBSEngine
             switch (method)
             {
                 case "GET":
-                    if (MCache.TryGet(keyName, out var tVal))
+                    if (CacheEnable && MCache.TryGet(keyName, out var tVal))
                         await context.Response.WriteAsync(tVal.ToString());
                     else
                     {
@@ -100,7 +102,7 @@ namespace CheeDBSEngine
                         if (string.IsNullOrEmpty(val)) await context.Response.WriteAsync("not found");
                         else
                         {
-                            MCache.Put(keyName, val);
+                            if (CacheEnable) MCache.Put(keyName, val);
                             await context.Response.WriteAsync(val);
                         }
                     }
@@ -113,7 +115,7 @@ namespace CheeDBSEngine
                     await Task.Run(() =>
                     {
                         DB.Put(keyName, keyValue.ToString());
-                        MCache.Put(keyName, keyValue.ToString());
+                        if (CacheEnable) MCache.Put(keyName, keyValue.ToString());
                     });
                     await context.Response.WriteAsync("OK");
                     break;
@@ -124,7 +126,7 @@ namespace CheeDBSEngine
                     await Task.Run(() =>
                     {
                         DB.Put(keyName, keyValue.ToString());
-                        MCache.Put(keyName, keyValue.ToString());
+                        if (CacheEnable) MCache.Put(keyName, keyValue.ToString());
                     });
                     await context.Response.WriteAsync("OK");
                     break;
@@ -134,7 +136,7 @@ namespace CheeDBSEngine
                 case "DELETE":
                     await Task.Run(() =>
                     {
-                        MCache.Del(keyName);
+                        if (CacheEnable) MCache.Del(keyName);
                         DB.Remove(keyName);
                     });
                     await context.Response.WriteAsync("OK");
@@ -142,7 +144,7 @@ namespace CheeDBSEngine
                 case "DEL":
                     await Task.Run(() =>
                     {
-                        MCache.Del(keyName);
+                        if (CacheEnable) MCache.Del(keyName);
                         DB.Remove(keyName);
                     });
                     await context.Response.WriteAsync("OK");
