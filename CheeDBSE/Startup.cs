@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using static CheeDBSEngine.Program;
+using static CheeDBSE.RocksDB;
 
 namespace CheeDBSEngine
 {
@@ -21,6 +21,9 @@ namespace CheeDBSEngine
         private static string IndexStr = File.Exists(SetupBasePath + "index.html")
             ? File.ReadAllText(SetupBasePath + "index.html")
             : "Welcome to CheeDBS";
+        private static string SecretPath = File.Exists(SetupBasePath + "secret.txt")
+            ? File.ReadAllText(SetupBasePath + "secret.txt")
+            : "";
 
         public static bool CacheEnable = false;
 
@@ -31,6 +34,7 @@ namespace CheeDBSEngine
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ILoggerFactory loggerFactory)
         {
+            app.UseDeveloperExceptionPage();
             if (env.IsDevelopment()) app.UseDeveloperExceptionPage();
             app.UseRouting().UseEndpoints(endpoints =>
             {
@@ -44,7 +48,7 @@ namespace CheeDBSEngine
 
         private void CacheRoutes(IEndpointRouteBuilder endpoints)
         {
-            endpoints.Map("/cache/keys", async context =>
+            endpoints.Map(SecretPath + "/cache/keys", async context =>
             {
                 context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
                 context.Response.ContentType = "text/plain";
@@ -55,7 +59,7 @@ namespace CheeDBSEngine
 
         private void KeysRoutes(IEndpointRouteBuilder endpoints)
         {
-            endpoints.Map("/rocks/keys", async context =>
+            endpoints.Map(SecretPath + "/rocks/keys", async context =>
             {
                 var keyList = new List<string>();
                 using (var iterator = DB.NewIterator())
@@ -71,14 +75,14 @@ namespace CheeDBSEngine
                 }
                 await context.Response.WriteAsync(string.Join(Environment.NewLine, keyList));
             });
-            endpoints.Map("/rocks/keys/{keyName}", async context =>
+            endpoints.Map(SecretPath + "/rocks/keys/{keyName}", async context =>
             {
                 context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
                 context.Response.ContentType = "text/plain";
                 await MethodCases(context, context.Request.Method);
             });
 
-            endpoints.Map("/rocks/keys/{keyName}/{keyMethod}", async context =>
+            endpoints.Map(SecretPath + "/rocks/keys/{keyName}/{keyMethod}", async context =>
             {
                 var keyMethod = context.GetRouteValue("keyMethod").ToString();
                 context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
