@@ -17,16 +17,6 @@ namespace CheeDBSEngine
 {
     public class Startup
     {
-        private static string SetupBasePath = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
-        private static string IndexStr = File.Exists(SetupBasePath + "index.html")
-            ? File.ReadAllText(SetupBasePath + "index.html")
-            : "Welcome to CheeDBS";
-        private static string SecretPath = File.Exists(SetupBasePath + "secret.txt")
-            ? File.ReadAllText(SetupBasePath + "secret.txt")
-            : "";
-
-        public static bool CacheEnable = false;
-
         public void ConfigureServices(IServiceCollection services)
         {
 
