@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Runtime.Caching;
 using System.Threading.Tasks;
@@ -51,6 +50,8 @@ namespace CheeDBSEngine
         {
             endpoints.Map(SecretPath + "/rocks/keys", async context =>
             {
+                context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
+                context.Response.ContentType = "text/plain";
                 var keyList = new List<string>();
                 using (var iterator = DB.NewIterator())
                 {
@@ -74,9 +75,9 @@ namespace CheeDBSEngine
 
             endpoints.Map(SecretPath + "/rocks/keys/{keyName}/{keyMethod}", async context =>
             {
-                var keyMethod = context.GetRouteValue("keyMethod").ToString();
                 context.Response.Headers.Add("X-Powered-By", "CheeDBSE/ONE");
                 context.Response.ContentType = "text/plain";
+                var keyMethod = context.GetRouteValue("keyMethod").ToString();
                 await MethodCases(context, keyMethod.ToUpper());
             });
         }
